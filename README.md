@@ -12,7 +12,7 @@
 
 ## 만드는 것
 
-1. HWPX를 올리면 글이 화면에 보인다.
+1. HWPX를 올리면 글이 우리가 그린 SVG 페이지에 보인다. [rhwp](https://github.com/edwardkim/rhwp)는 배치 참고만 하고, 뷰어 런타임으로 쓰지 않는다. 기준은 [plan/06-뷰어.md](plan/06-뷰어.md)다.
 2. 문단, 글자 범위, 표 칸을 고르면 내부 노드와 연결된다.
 3. 고친 문장 또는 바깥에서 받은 명령 JSON이 스키마 검증을 통과한다.
 4. 승인 후에만 대상 XML이 바뀌고, 나머지 ZIP 엔트리는 원본 바이트로 남는다.
@@ -22,15 +22,15 @@
 
 모델 학습, 프롬프트 제품, 에이전트 프레임워크, 모델 API 연동은 이 계획의 완료 조건이 아니다. 바깥 모델이 나중에 붙을 자리는 [plan/04-연결-경계.md](plan/04-연결-경계.md)의 `EditPlanner`다. 그 자리에 지금은 사람이 문장을 입력하고, 명령 JSON을 붙여 넣는다.
 
-HWP 바이너리, DOCX, 완전한 수동 워드프로세서, SVG를 다시 HWPX로 되돌리는 기능도 범위 밖이다.
+HWP 바이너리, DOCX, 완전한 수동 워드프로세서, SVG를 다시 HWPX로 되돌리는 기능, rhwp 에디터 임베드도 범위 밖이다.
 
 ## 마일스톤
 
 | 마일스톤 | 보이는 결과 | 하루 |
 |---|---|---|
-| [M0 고르고 미리본다](plan/milestones/M0.md) | 업로드, 선택, 바꿀 문장, 나란히 비교. 파일은 그대로 | [D01](plan/days/D01.md)–[D03](plan/days/D03.md) |
+| [M0 고르고 미리본다](plan/milestones/M0.md) | SVG에 문단이 보이고, 선택과 수정안을 비교한다. 파일은 그대로 | [D01](plan/days/D01.md)–[D03](plan/days/D03.md) |
 | [M1 승인하면 파일로 남는다](plan/milestones/M1.md) | 화면이 바뀌고, 새 HWPX가 내려받아지고, 한컴에서 열린다 | [D04](plan/days/D04.md), [D06](plan/days/D06.md)–[D09](plan/days/D09.md) |
-| [M2 문서처럼 보이고 정확히 고른다](plan/milestones/M2.md) | 페이지, 표, 글자 드래그, 확대, 이미지 자리 | [D05](plan/days/D05.md), [D10](plan/days/D10.md)–[D12](plan/days/D12.md) |
+| [M2 문서처럼 보이고 정확히 고른다](plan/milestones/M2.md) | SVG 줄 배치, 표, 글자 드래그, 확대, 이미지 자리 | [D05](plan/days/D05.md), [D10](plan/days/D10.md)–[D12](plan/days/D12.md) |
 | [M3 바깥 명령을 꽂는다](plan/milestones/M3.md) | 문맥 JSON 복사, 명령 JSON 붙여넣기, 위험한 저장 차단 | [D13](plan/days/D13.md)–[D15](plan/days/D15.md) |
 
 달력 순서는 혼자 진행할 때의 순서다. D05는 M2에 속하지만 D04 다음 날에 둔다. 매일 화면에 새로운 것이 보이게 하기 위해서다. 두 명이면 [plan/BOARD.md](plan/BOARD.md)의 병렬 쌍을 같은 날에 연다.
@@ -46,5 +46,6 @@ D09 한컴 확인이 실패하면 D10으로 넘어가지 않는다. D06–D08의
 - [연결 경계](plan/04-연결-경계.md)
 - [병렬 트랙](plan/05-트랙.md)
 - [보드](plan/BOARD.md)
+- [뷰어](plan/06-뷰어.md)
 - [코퍼스](plan/corpus.md)
 - [D15 이후 당겨 올 카드](plan/backlog/README.md)
