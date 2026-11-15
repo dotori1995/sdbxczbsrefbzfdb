@@ -4,7 +4,7 @@ export type TextRange = {
 }
 
 export type ReplaceTextCommand = {
-  command: 'replace_text'
+  command: TextCommandName
   target_node_id: string
   expected_original_text: string
   replacement_text: string
@@ -21,9 +21,20 @@ export type TextSelection = {
 export type TextNode = {
   nodeId: string
   text: string
+  runCount?: number
 }
 
-export type CommandFailureCode = 'UNKNOWN_COMMAND' | 'INVALID_COMMAND' | 'MISSING_TARGET' | 'STALE_TEXT' | 'CONFIRMATION_REQUIRED'
+export const textCommandNames = ['replace_text', 'rewrite_paragraph'] as const
+
+export type TextCommandName = (typeof textCommandNames)[number]
+
+export type CommandFailureCode =
+  | 'UNKNOWN_COMMAND'
+  | 'INVALID_COMMAND'
+  | 'MISSING_TARGET'
+  | 'STALE_TEXT'
+  | 'CONFIRMATION_REQUIRED'
+  | 'MIXED_RUNS'
 
 export type CommandParseResult =
   | { ok: true; command: ReplaceTextCommand }
@@ -95,7 +106,7 @@ export function draftReplaceText(selection: TextSelection, replacementText: stri
 
 export function validateCommand(input: unknown, nodes: readonly TextNode[]): CommandValidation {
   if (!isRecord(input)) return failure('INVALID_COMMAND', '명령이 객체가 아닙니다')
-  if (input.command !== 'replace_text') {
+  if (typeof input.command !== 'string' || !textCommandNames.includes(input.command as TextCommandName)) {
     return failure('UNKNOWN_COMMAND', `허용되지 않은 명령입니다: ${String(input.command)}`)
   }
   if (typeof input.target_node_id !== 'string' || input.target_node_id === '') {
@@ -111,6 +122,9 @@ export function validateCommand(input: unknown, nodes: readonly TextNode[]): Com
   if (node.text !== command.expected_original_text) return failure('STALE_TEXT', '원문이 현재 문단과 다릅니다')
   if (command.requires_confirmation !== true) {
     return failure('CONFIRMATION_REQUIRED', 'requires_confirmation이 true가 아닙니다')
+  }
+  if (command.command === 'rewrite_paragraph' && node.runCount !== 1) {
+    return failure('MIXED_RUNS', '글자 런이 하나가 아니라 적용하지 않습니다')
   }
   return { ok: true, command }
 }
@@ -128,7 +142,7 @@ export function parseCommand(input: unknown): CommandParseResult {
   if (typeof input.command !== 'string') {
     return invalid('command가 없습니다')
   }
-  if (input.command !== 'replace_text') {
+  if (!textCommandNames.includes(input.command as TextCommandName)) {
     return {
       ok: false,
       code: 'UNKNOWN_COMMAND',
@@ -160,7 +174,7 @@ export function parseCommand(input: unknown): CommandParseResult {
   return {
     ok: true,
     command: {
-      command: 'replace_text',
+      command: input.command as TextCommandName,
       target_node_id: input.target_node_id,
       expected_original_text: input.expected_original_text,
       replacement_text: input.replacement_text,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { draftReplaceText, exampleReplaceText, parseCommand, previewDecision, validateCommand, type TextNode } from './index.ts'
+import { draftReplaceText, exampleReplaceText, parseCommand, previewDecision, textCommandNames, validateCommand, type TextNode } from './index.ts'
 
 describe('parseCommand', () => {
   it('예시 replace_text는 통과한다', () => {
@@ -52,6 +52,15 @@ describe('validateCommand', () => {
     expect(JSON.stringify(frozen)).toBe(before)
     expect(frozen[0]).toBe(live[0])
     expect(frozen[1].text).toBe('두번째 문단이다.')
+  })
+
+  it('허용 명령은 replace_text와 rewrite_paragraph이고 혼합 런 재작성은 거절한다', () => {
+    expect([...textCommandNames]).toEqual(['replace_text', 'rewrite_paragraph'])
+    const rewrite = { ...exampleReplaceText, command: 'rewrite_paragraph' as const }
+    const single: TextNode[] = [{ nodeId: 'section0_p1', text: '두번째 문단이다.', runCount: 1 }]
+    const mixed: TextNode[] = [{ nodeId: 'section0_p1', text: '두번째 문단이다.', runCount: 2 }]
+    expect(validateCommand(rewrite, single)).toEqual({ ok: true, command: rewrite })
+    expect(codeOf(validateCommand(rewrite, mixed))).toBe('MIXED_RUNS')
   })
 })
 

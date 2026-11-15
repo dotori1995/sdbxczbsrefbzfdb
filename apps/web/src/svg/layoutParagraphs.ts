@@ -5,23 +5,54 @@ export type ParagraphView = {
 
 export type SvgTextLine = {
   nodeId: string
+  line: number
   text: string
   x: number
   y: number
+  page: number
 }
 
+export type SvgPage = {
+  page: number
+  lines: SvgTextLine[]
+}
+
+export const PAGE_WIDTH = 794
+export const PAGE_HEIGHT = 1123
+
 const LINE_WIDTH = 710
+const LINE_HEIGHT = 28
+const BOTTOM_MARGIN = 40
 
 export function layoutParagraphs(paragraphs: ParagraphView[]): SvgTextLine[] {
   const lines: SvgTextLine[] = []
-  let y = 28
+  let page = 1
+  let y = LINE_HEIGHT
   for (const paragraph of paragraphs) {
-    for (const text of wrapText(paragraph.text)) {
-      lines.push({ nodeId: paragraph.nodeId, text, x: 40, y })
-      y += 28
-    }
+    wrapText(paragraph.text).forEach((text, line) => {
+      if (y > PAGE_HEIGHT - BOTTOM_MARGIN) {
+        page += 1
+        y = LINE_HEIGHT
+      }
+      lines.push({ nodeId: paragraph.nodeId, line, text, x: 40, y, page })
+      y += LINE_HEIGHT
+    })
   }
   return lines
+}
+
+export function layoutPages(paragraphs: ParagraphView[]): SvgPage[] {
+  const grouped = new Map<number, SvgTextLine[]>()
+  for (const line of layoutParagraphs(paragraphs)) {
+    const pageLines = grouped.get(line.page) ?? []
+    pageLines.push(line)
+    grouped.set(line.page, pageLines)
+  }
+  if (grouped.size === 0) return [{ page: 1, lines: [] }]
+  return [...grouped.keys()].sort((left, right) => left - right).map((page) => ({
+    page,
+    lines: grouped.get(page) ?? [],
+  }))
 }
 
 function wrapText(text: string): string[] {
@@ -50,7 +81,7 @@ export type ParagraphSelection = {
   text: string
 }
 
-export function paragraphSelection(line: SvgTextLine): ParagraphSelection {
+export function paragraphSelection(line: { nodeId: string; text: string }): ParagraphSelection {
   const section = /^section(\d+)_p\d+$/.exec(line.nodeId)
   return {
     node_id: line.nodeId,
@@ -59,7 +90,3 @@ export function paragraphSelection(line: SvgTextLine): ParagraphSelection {
   }
 }
 
-export function pageHeight(lines: SvgTextLine[]): number {
-  if (lines.length === 0) return 160
-  return Math.max(160, lines[lines.length - 1].y + 40)
-}

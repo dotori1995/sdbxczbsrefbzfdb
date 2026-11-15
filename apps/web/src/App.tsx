@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { draftReplaceText, previewDecision, validateCommand, type CommandValidation, type PreviewState, type TextNode } from '@hwpx/commands'
 import { applyParagraphText, readParagraphs, type Paragraph } from '@hwpx/hwpx'
-import { layoutParagraphs, pageHeight, paragraphSelection } from './svg/layoutParagraphs.ts'
+import { layoutPages, PAGE_HEIGHT, PAGE_WIDTH, paragraphSelection } from './svg/layoutParagraphs.ts'
 
 type Highlight = {
+  page: number
   x: number
   y: number
   width: number
@@ -18,32 +19,36 @@ export function App() {
   const [replacement, setReplacement] = useState('')
   const [commandDirty, setCommandDirty] = useState(false)
   const [commandText, setCommandText] = useState('')
-  const [highlight, setHighlight] = useState<Highlight | null>(null)
+  const [highlights, setHighlights] = useState<Highlight[]>([])
   const [preview, setPreview] = useState<PreviewState>({ status: 'draft', command: null })
   const [applyNote, setApplyNote] = useState<string | null>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
+  const stageRef = useRef<HTMLElement>(null)
   const originalBytes = useRef<Uint8Array>(new Uint8Array())
-  const lines = paragraphs ? layoutParagraphs(paragraphs) : null
+  const pages = paragraphs ? layoutPages(paragraphs) : null
 
   const selected = paragraphs?.find((paragraph) => paragraph.nodeId === selectedId) ?? null
-  const selection = selected ? paragraphSelection({ nodeId: selected.nodeId, text: selected.text, x: 40, y: 28 }) : null
+  const selection = selected ? paragraphSelection({ nodeId: selected.nodeId, text: selected.text }) : null
   const draft = selection ? draftReplaceText({ node_id: selection.node_id, text: selection.text }, replacement) : null
   const shownCommand = commandDirty ? commandText : draft ? JSON.stringify(draft, null, 2) : ''
   const validation = selection ? validateShown(shownCommand, paragraphs ?? []) : null
 
   useLayoutEffect(() => {
     if (!selectedId) {
-      setHighlight(null)
+      setHighlights([])
       return
     }
-    const elements = [...(svgRef.current?.querySelectorAll<SVGTextElement>(`text[data-node-id="${selectedId}"]`) ?? [])]
-    if (elements.length === 0) return
-    const boxes = elements.map((element) => element.getBBox())
-    const x = Math.min(...boxes.map((box) => box.x)) - 6
-    const y = Math.min(...boxes.map((box) => box.y)) - 3
-    const right = Math.max(...boxes.map((box) => box.x + box.width)) + 6
-    const bottom = Math.max(...boxes.map((box) => box.y + box.height)) + 3
-    setHighlight({ x, y, width: right - x, height: bottom - y })
+    const next: Highlight[] = []
+    for (const svg of stageRef.current?.querySelectorAll('svg') ?? []) {
+      const elements = [...svg.querySelectorAll<SVGTextElement>(`text[data-node-id="${selectedId}"]`)]
+      if (elements.length === 0) continue
+      const boxes = elements.map((element) => element.getBBox())
+      const x = Math.min(...boxes.map((box) => box.x)) - 6
+      const y = Math.min(...boxes.map((box) => box.y)) - 3
+      const right = Math.max(...boxes.map((box) => box.x + box.width)) + 6
+      const bottom = Math.max(...boxes.map((box) => box.y + box.height)) + 3
+      next.push({ page: Number(svg.getAttribute('data-page')), x, y, width: right - x, height: bottom - y })
+    }
+    setHighlights(next)
   }, [selectedId, paragraphs])
 
   async function openFile(file: File) {
@@ -111,43 +116,49 @@ export function App() {
         </label>
       </header>
       <div className="workspace">
-        <section className="stage" aria-label="문서">
+        <section className="stage" aria-label="문서" ref={stageRef}>
           {cause ? (
             <div className="error" role="alert">
               <p>파일을 열 수 없습니다</p>
               <p>{cause}</p>
             </div>
-          ) : lines ? (
-            <svg ref={svgRef} data-page="1" width="794" height={pageHeight(lines)} viewBox={`0 0 794 ${pageHeight(lines)}`}>
-              <rect width="794" height={pageHeight(lines)} fill="#fffef9" />
-              <g data-layer="body">
-                {lines.map((line) => (
-                  <text
-                    key={`${line.nodeId}-${line.y}`}
-                    data-node-id={line.nodeId}
-                    data-selected={line.nodeId === selectedId ? 'true' : 'false'}
-                    x={line.x}
-                    y={line.y}
-                    onClick={() => choose(line.nodeId)}
-                  >
-                    {line.text}
-                  </text>
-                ))}
-              </g>
-              <g data-layer="selection" pointerEvents="none">
-                {highlight ? (
-                  <rect
-                    data-selection={selectedId ?? ''}
-                    x={highlight.x}
-                    y={highlight.y}
-                    width={highlight.width}
-                    height={highlight.height}
-                    fill="#f0c14d"
-                    opacity="0.45"
-                  />
-                ) : null}
-              </g>
-            </svg>
+          ) : pages ? (
+            pages.map((page) => {
+              const highlight = highlights.find((item) => item.page === page.page) ?? null
+              return (
+                <svg key={page.page} data-page={page.page} width={PAGE_WIDTH} height={PAGE_HEIGHT} viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}>
+                  <rect width={PAGE_WIDTH} height={PAGE_HEIGHT} fill="#fffef9" />
+                  <g data-layer="body">
+                    {page.lines.map((line) => (
+                      <text
+                        key={`${line.nodeId}-${line.line}`}
+                        data-node-id={line.nodeId}
+                        data-line={line.line}
+                        data-selected={line.nodeId === selectedId ? 'true' : 'false'}
+                        x={line.x}
+                        y={line.y}
+                        onClick={() => choose(line.nodeId)}
+                      >
+                        {line.text}
+                      </text>
+                    ))}
+                  </g>
+                  <g data-layer="selection" pointerEvents="none">
+                    {highlight ? (
+                      <rect
+                        data-selection={selectedId ?? ''}
+                        x={highlight.x}
+                        y={highlight.y}
+                        width={highlight.width}
+                        height={highlight.height}
+                        fill="#f0c14d"
+                        opacity="0.45"
+                      />
+                    ) : null}
+                  </g>
+                </svg>
+              )
+            })
           ) : (
             <p className="waiting">{fileName ? '읽는 중입니다' : 'HWPX를 올리면 문단이 이 페이지에 보입니다.'}</p>
           )}
@@ -259,14 +270,14 @@ export function App() {
 }
 
 function textNodes(paragraphs: Paragraph[]): TextNode[] {
-  return paragraphs.map((paragraph) => ({ nodeId: paragraph.nodeId, text: paragraph.text }))
+  return paragraphs.map((paragraph) => ({ nodeId: paragraph.nodeId, text: paragraph.text, runCount: paragraph.runs.length }))
 }
 
 function validateShown(commandText: string, paragraphs: Paragraph[]): CommandValidation {
   try {
     return validateCommand(
       JSON.parse(commandText) as unknown,
-      paragraphs.map((paragraph) => ({ nodeId: paragraph.nodeId, text: paragraph.text })),
+      paragraphs.map((paragraph) => ({ nodeId: paragraph.nodeId, text: paragraph.text, runCount: paragraph.runs.length })),
     )
   } catch {
     return { ok: false, code: 'INVALID_COMMAND', message: '명령 JSON이 올바르지 않습니다' }
