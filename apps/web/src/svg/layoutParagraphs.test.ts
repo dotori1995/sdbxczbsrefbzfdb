@@ -43,4 +43,25 @@ describe('layoutParagraphs', () => {
     expect(lines[38]).toMatchObject({ page: 2, line: 38, y: 28 })
     expect(layoutPages([{ nodeId: 'section0_p0', text: '가'.repeat(44 * 39) }]).map((page) => page.page)).toEqual([1, 2])
   })
+
+  it('쪽 여백과 글자 크기, 정렬을 좌표에 반영한다', () => {
+    const lines = layoutParagraphs([
+      {
+        nodeId: 'section0_p0',
+        text: '가',
+        align: 'CENTER',
+        runs: [{ text: '가', fontSize: 20, fill: '#ff0000' }],
+        frame: {
+          pageWidthHwp: 59528,
+          pageHeightHwp: 84188,
+          margins: { left: 5669, right: 5669, top: 3543, bottom: 3543 },
+        },
+      },
+    ])
+    const left = 5669 * (PAGE_WIDTH / 59528)
+    expect(lines[0]).toMatchObject({ fontSize: 20, fill: '#ff0000', textAnchor: 'middle' })
+    expect(lines[0].x).toBeCloseTo(left + (PAGE_WIDTH - left * 2) / 2)
+    expect(lines[0].y).toBeCloseTo(3543 * (PAGE_HEIGHT / 84188) + 20)
+    expect(lines[0].segments).toEqual([{ text: '가', fontSize: 20, fill: '#ff0000' }])
+  })
 })

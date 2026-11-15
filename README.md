@@ -49,4 +49,4 @@ D09 한컴 확인이 실패하면 D10으로 넘어가지 않는다. D06–D08의
 - [뷰어](plan/06-뷰어.md)
 - [코퍼스](plan/corpus.md)
 - [HWPX 포맷](plan/hwpx-포맷.md)
-- [D15 이후 당겨 올 카드](plan/backlog/README.md)
+- [D18 이후 당겨 올 카드](plan/backlog/README.md)

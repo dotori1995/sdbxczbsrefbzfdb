@@ -136,7 +136,29 @@ aside h2 {
   font-size: 14px;
 }
 
+.format-panel {
+  margin: 16px 0;
+  padding-top: 12px;
+  border-top: 1px solid #ddd6cc;
+}
+
+.format-panel h2 {
+  margin-bottom: 8px;
+}
+
+.format-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.format-grid .field,
+.format-panel .field {
+  margin: 0 0 8px;
+}
+
 .field input,
+.field select,
 textarea {
   width: 100%;
   font: inherit;
@@ -205,9 +227,19 @@ textarea {
   cursor: pointer;
 }
 
-.actions button:last-child {
+.actions button:last-child:not(:first-child) {
   background: transparent;
   color: #1c1917;
+}
+
+.actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.actions button:only-child {
+  background: #1c1917;
+  color: #fffef9;
 }
 
 pre {
