@@ -151,9 +151,52 @@ textarea {
   line-height: 1.45;
 }
 
-.validation {
+.validation,
+.preview-status,
+.kept {
   margin: 12px 0 0;
   font-weight: 700;
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.compare h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #57534e;
+}
+
+.compare p {
+  margin: 0;
+  min-height: 48px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #d6d3d1;
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actions button {
+  padding: 8px 14px;
+  border: 1px solid #1c1917;
+  background: #1c1917;
+  color: #fffef9;
+  cursor: pointer;
+}
+
+.actions button:last-child {
+  background: transparent;
+  color: #1c1917;
 }
 
 pre {
@@ -172,6 +215,10 @@ pre {
   }
 
   .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .compare {
     grid-template-columns: 1fr;
   }
 }

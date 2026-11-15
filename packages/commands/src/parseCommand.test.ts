@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { draftReplaceText, exampleReplaceText, parseCommand, validateCommand, type TextNode } from './index.ts'
+import { draftReplaceText, exampleReplaceText, parseCommand, previewDecision, validateCommand, type TextNode } from './index.ts'
 
 describe('parseCommand', () => {
   it('예시 replace_text는 통과한다', () => {
@@ -58,3 +58,29 @@ describe('validateCommand', () => {
 function codeOf(result: ReturnType<typeof validateCommand>): string {
   return result.ok ? '' : result.code
 }
+
+describe('previewDecision', () => {
+  const nodes: TextNode[] = [{ nodeId: 'section0_p1', text: '두번째 문단이다.' }]
+  const bytes = new Uint8Array([4, 5, 6])
+
+  it('invalid에서 approve는 상태가 바뀌지 않는다', () => {
+    const state = { status: 'invalid' as const, command: null }
+    expect(previewDecision(state, { type: 'approve' }, nodes, bytes)).toBe(state)
+  })
+
+  it('approve 호출 전후 문단 문자열과 ZIP 바이트가 같다', () => {
+    const frozen = nodes.map((node) => Object.freeze({ ...node }))
+    Object.freeze(frozen)
+    const before = frozen.map((node) => node.text).join('\n')
+    const beforeBytes = Array.from(bytes)
+    const next = previewDecision({ status: 'valid', command: exampleReplaceText }, { type: 'approve' }, frozen, bytes)
+    expect(next).toEqual({ status: 'approved', command: exampleReplaceText })
+    expect(frozen.map((node) => node.text).join('\n')).toBe(before)
+    expect(Array.from(bytes)).toEqual(beforeBytes)
+  })
+
+  it('reject는 비교용 명령을 비운다', () => {
+    const next = previewDecision({ status: 'valid', command: exampleReplaceText }, { type: 'reject' }, nodes, bytes)
+    expect(next).toEqual({ status: 'rejected', command: null })
+  })
+})

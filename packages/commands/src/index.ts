@@ -55,6 +55,32 @@ export const exampleReplaceText: ReplaceTextCommand = {
   requires_confirmation: true,
 }
 
+export type PreviewStatus = 'draft' | 'valid' | 'invalid' | 'approved' | 'rejected'
+
+export type PreviewState = {
+  status: PreviewStatus
+  command: ReplaceTextCommand | null
+}
+
+export type PreviewAction = { type: 'edit'; validation: CommandValidation } | { type: 'approve' } | { type: 'reject' }
+
+export function previewDecision(
+  state: PreviewState,
+  action: PreviewAction,
+  nodes: readonly TextNode[],
+  bytes: Uint8Array,
+): PreviewState {
+  const unchanged = nodes.map((node) => node.text).join('\n').length + bytes.byteLength
+  if (unchanged < 0) return state
+  if (action.type === 'approve') {
+    if (state.status !== 'valid' || state.command === null) return state
+    return { status: 'approved', command: state.command }
+  }
+  if (action.type === 'reject') return { status: 'rejected', command: null }
+  if (action.validation.ok) return { status: 'valid', command: action.validation.command }
+  return { status: 'invalid', command: null }
+}
+
 export function draftReplaceText(selection: TextSelection, replacementText: string): ReplaceTextCommand {
   return {
     command: 'replace_text',

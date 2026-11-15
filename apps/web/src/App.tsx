@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { draftReplaceText, validateCommand, type CommandValidation } from '@hwpx/commands'
+import { draftReplaceText, previewDecision, validateCommand, type CommandValidation, type PreviewState, type TextNode } from '@hwpx/commands'
 import { readParagraphs, type Paragraph } from '@hwpx/hwpx'
 import { layoutParagraphs, pageHeight, paragraphSelection } from './svg/layoutParagraphs.ts'
 
@@ -19,7 +19,9 @@ export function App() {
   const [commandDirty, setCommandDirty] = useState(false)
   const [commandText, setCommandText] = useState('')
   const [highlight, setHighlight] = useState<Highlight | null>(null)
+  const [preview, setPreview] = useState<PreviewState>({ status: 'draft', command: null })
   const svgRef = useRef<SVGSVGElement>(null)
+  const originalBytes = useRef<Uint8Array>(new Uint8Array())
   const lines = paragraphs ? layoutParagraphs(paragraphs) : null
 
   const selected = paragraphs?.find((paragraph) => paragraph.nodeId === selectedId) ?? null
@@ -51,8 +53,10 @@ export function App() {
     setReplacement('')
     setCommandDirty(false)
     setCommandText('')
+    setPreview({ status: 'draft', command: null })
     try {
       const bytes = new Uint8Array(await file.arrayBuffer())
+      originalBytes.current = bytes
       setParagraphs(readParagraphs(bytes))
     } catch (error) {
       setParagraphs(null)
@@ -64,6 +68,11 @@ export function App() {
     setSelectedId(nodeId)
     setReplacement('')
     setCommandDirty(false)
+    setPreview({ status: 'draft', command: null })
+  }
+
+  function applyEdit(validation: CommandValidation, nextParagraphs: Paragraph[]) {
+    setPreview((state) => previewDecision(state, { type: 'edit', validation }, textNodes(nextParagraphs), originalBytes.current))
   }
 
   return (
@@ -151,8 +160,19 @@ export function App() {
                 <input
                   value={replacement}
                   onChange={(event) => {
-                    setReplacement(event.target.value)
+                    const value = event.target.value
+                    setReplacement(value)
                     setCommandDirty(false)
+                    if (!paragraphs) return
+                    if (value === '') {
+                      setPreview({ status: 'draft', command: null })
+                      return
+                    }
+                    const command = draftReplaceText(
+                      { node_id: selection.node_id, text: selection.text },
+                      value,
+                    )
+                    applyEdit(validateCommand(command, textNodes(paragraphs)), paragraphs)
                   }}
                 />
               </label>
@@ -162,22 +182,69 @@ export function App() {
                 value={shownCommand}
                 spellCheck={false}
                 onChange={(event) => {
+                  const value = event.target.value
                   setCommandDirty(true)
-                  setCommandText(event.target.value)
+                  setCommandText(value)
+                  if (!paragraphs) return
+                  applyEdit(validateShown(value, paragraphs), paragraphs)
                 }}
               />
               <p className="validation" data-validation={validation.ok ? 'pass' : validation.code}>
                 {validation.ok ? '통과' : `${validation.code} ${validation.message}`}
               </p>
+              <p className="preview-status" data-preview={preview.status}>
+                {preview.status}
+              </p>
+              {(preview.status === 'valid' || preview.status === 'approved') && preview.command ? (
+                <div className="compare">
+                  <div>
+                    <h3>현재 문장</h3>
+                    <p>{preview.command.expected_original_text}</p>
+                  </div>
+                  <div>
+                    <h3>바꿀 문장</h3>
+                    <p>{preview.command.replacement_text}</p>
+                  </div>
+                </div>
+              ) : null}
+              {preview.status === 'valid' ? (
+                <div className="actions">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPreview((state) =>
+                        previewDecision(state, { type: 'approve' }, textNodes(paragraphs ?? []), originalBytes.current),
+                      )
+                    }
+                  >
+                    승인
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPreview((state) =>
+                        previewDecision(state, { type: 'reject' }, textNodes(paragraphs ?? []), originalBytes.current),
+                      )
+                    }
+                  >
+                    거절
+                  </button>
+                </div>
+              ) : null}
+              {preview.status === 'approved' ? <p className="kept">파일은 아직 그대로</p> : null}
             </>
           ) : (
             <p className="aside-note">문단을 클릭하면 선택과 명령 초안이 여기 나옵니다.</p>
           )}
-          <p className="aside-note">이 화면에는 적용, 저장, 다운로드가 없습니다.</p>
+          <p className="aside-note">다운로드는 없습니다.</p>
         </aside>
       </div>
     </div>
   )
+}
+
+function textNodes(paragraphs: Paragraph[]): TextNode[] {
+  return paragraphs.map((paragraph) => ({ nodeId: paragraph.nodeId, text: paragraph.text }))
 }
 
 function validateShown(commandText: string, paragraphs: Paragraph[]): CommandValidation {
