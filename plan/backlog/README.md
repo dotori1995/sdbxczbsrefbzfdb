@@ -9,7 +9,7 @@
 | [WP-00 라이선스](WP-00-license.md) | 도입 후보별 사용 가능 여부 | 아무 때나. 출시 전 필수 | `notes/engines` |
 | [WP-01 되돌리기](WP-01-undo.md) | 직전 승인 취소 | D07 | `apps/web`, `packages/hwpx` |
 | [WP-02 문단 삽입 삭제](WP-02-paragraph-structure.md) | 문단이 늘거나 줄어 보임 | D09 성공 | `packages/hwpx` |
-| [WP-03 스타일 보류](WP-03-style.md) | 스타일 명령이 기본 거절 | D04 | `packages/commands` |
+| [WP-03 글자 모양과 문단 모양](WP-03-style.md) | 고른 런이나 문단의 모양만 바뀜 | D07 | `packages/commands`, `packages/hwpx` |
 | [WP-04 머리말 보존](WP-04-header.md) | 머리말이 있는 파일의 저장 차단 또는 보존 증명 | D15 | `packages/hwpx` |
 | [WP-05 각주 보존](WP-05-footnote.md) | 각주 참조가 남은 채 문단만 수정 | D09 성공 | `packages/hwpx` |
 | [WP-06 표 구조](WP-06-table-structure.md) | 행 추가가 한컴에서 열림 | D08, D09 | `packages/hwpx`, `apps/web` |
