@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { draftReplaceText, previewDecision, validateCommand, type CommandValidation, type PreviewState, type TextNode } from '@hwpx/commands'
-import { readParagraphs, type Paragraph } from '@hwpx/hwpx'
+import { applyParagraphText, readParagraphs, type Paragraph } from '@hwpx/hwpx'
 import { layoutParagraphs, pageHeight, paragraphSelection } from './svg/layoutParagraphs.ts'
 
 type Highlight = {
@@ -20,6 +20,7 @@ export function App() {
   const [commandText, setCommandText] = useState('')
   const [highlight, setHighlight] = useState<Highlight | null>(null)
   const [preview, setPreview] = useState<PreviewState>({ status: 'draft', command: null })
+  const [applyNote, setApplyNote] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const originalBytes = useRef<Uint8Array>(new Uint8Array())
   const lines = paragraphs ? layoutParagraphs(paragraphs) : null
@@ -54,6 +55,7 @@ export function App() {
     setCommandDirty(false)
     setCommandText('')
     setPreview({ status: 'draft', command: null })
+    setApplyNote(null)
     try {
       const bytes = new Uint8Array(await file.arrayBuffer())
       originalBytes.current = bytes
@@ -69,6 +71,20 @@ export function App() {
     setReplacement('')
     setCommandDirty(false)
     setPreview({ status: 'draft', command: null })
+    setApplyNote(null)
+  }
+
+  function approve() {
+    if (!paragraphs || preview.status !== 'valid' || preview.command === null) return
+    const applied = applyParagraphText(paragraphs, preview.command.target_node_id, preview.command.replacement_text)
+    if (!applied.ok) {
+      setApplyNote(`${applied.code} ${applied.message}`)
+      return
+    }
+    const approved = previewDecision(preview, { type: 'approve' }, textNodes(paragraphs), originalBytes.current)
+    setParagraphs(applied.paragraphs)
+    setPreview(approved)
+    setApplyNote('화면만 바뀌었습니다. 받은 파일은 그대로입니다')
   }
 
   function applyEdit(validation: CommandValidation, nextParagraphs: Paragraph[]) {
@@ -163,6 +179,7 @@ export function App() {
                     const value = event.target.value
                     setReplacement(value)
                     setCommandDirty(false)
+                    setApplyNote(null)
                     if (!paragraphs) return
                     if (value === '') {
                       setPreview({ status: 'draft', command: null })
@@ -185,6 +202,7 @@ export function App() {
                   const value = event.target.value
                   setCommandDirty(true)
                   setCommandText(value)
+                  setApplyNote(null)
                   if (!paragraphs) return
                   applyEdit(validateShown(value, paragraphs), paragraphs)
                 }}
@@ -209,14 +227,7 @@ export function App() {
               ) : null}
               {preview.status === 'valid' ? (
                 <div className="actions">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPreview((state) =>
-                        previewDecision(state, { type: 'approve' }, textNodes(paragraphs ?? []), originalBytes.current),
-                      )
-                    }
-                  >
+                  <button type="button" onClick={approve}>
                     승인
                   </button>
                   <button
@@ -231,7 +242,11 @@ export function App() {
                   </button>
                 </div>
               ) : null}
-              {preview.status === 'approved' ? <p className="kept">파일은 아직 그대로</p> : null}
+              {applyNote ? (
+                <p className="kept" data-apply={preview.status === 'approved' ? 'screen' : 'refused'}>
+                  {applyNote}
+                </p>
+              ) : null}
             </>
           ) : (
             <p className="aside-note">문단을 클릭하면 선택과 명령 초안이 여기 나옵니다.</p>

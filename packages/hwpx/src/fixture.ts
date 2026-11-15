@@ -61,6 +61,32 @@ export function buildHwpx(files: Record<string, string>): Uint8Array {
   return zipSync(entries)
 }
 
+export const T02_BOLD = '굵은글'
+export const T02_PLAIN = '보통글'
+
+export function t02SectionXml(
+  sectionNs = `${HANCOM_2011}/section`,
+  paragraphNs = `${HANCOM_2011}/paragraph`,
+): string {
+  return sectionXml(
+    sectionNs,
+    paragraphNs,
+    `  <hp:p id="300" paraPrIDRef="0">
+    <hp:run charPrIDRef="0"><hp:secPr/></hp:run>
+    <hp:run charPrIDRef="1"><hp:t>${T02_BOLD}</hp:t></hp:run>
+    <hp:run charPrIDRef="0"><hp:ctrl/></hp:run>
+    <hp:run charPrIDRef="0"><hp:t>${T02_PLAIN}</hp:t></hp:run>
+  </hp:p>`,
+  )
+}
+
+export function buildT02Fixture(section = t02SectionXml()): Uint8Array {
+  return buildHwpx({
+    'Contents/header.xml': T01_HEADER,
+    'Contents/section0.xml': section,
+  })
+}
+
 export function buildT01Fixture(section = t01SectionXml()): Uint8Array {
   return buildHwpx({
     'Contents/header.xml': T01_HEADER,

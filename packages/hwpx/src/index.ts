@@ -13,6 +13,8 @@ export type Paragraph = {
   runs: TextRun[]
 }
 
+export { applyParagraphText, type ApplyParagraphResult } from './model/applyParagraphText.ts'
+
 export function readParagraphs(bytes: Uint8Array): Paragraph[] {
   let entries: Record<string, Uint8Array>
   try {
