@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { draftReplaceText, previewDecision, validateCommand, type CommandValidation, type PreviewState, type TextNode } from '@hwpx/commands'
-import { applyParagraphText, readParagraphs, type Paragraph } from '@hwpx/hwpx'
+import { applyParagraphText, planPatch, readPackage, readParagraphs, type Paragraph, type PatchPlan } from '@hwpx/hwpx'
 import { layoutPages, PAGE_HEIGHT, PAGE_WIDTH, paragraphSelection } from './svg/layoutParagraphs.ts'
 
 type Highlight = {
@@ -22,6 +22,7 @@ export function App() {
   const [highlights, setHighlights] = useState<Highlight[]>([])
   const [preview, setPreview] = useState<PreviewState>({ status: 'draft', command: null })
   const [applyNote, setApplyNote] = useState<string | null>(null)
+  const [patchPlan, setPatchPlan] = useState<PatchPlan | null>(null)
   const stageRef = useRef<HTMLElement>(null)
   const originalBytes = useRef<Uint8Array>(new Uint8Array())
   const pages = paragraphs ? layoutPages(paragraphs) : null
@@ -61,6 +62,7 @@ export function App() {
     setCommandText('')
     setPreview({ status: 'draft', command: null })
     setApplyNote(null)
+    setPatchPlan(null)
     try {
       const bytes = new Uint8Array(await file.arrayBuffer())
       originalBytes.current = bytes
@@ -77,18 +79,30 @@ export function App() {
     setCommandDirty(false)
     setPreview({ status: 'draft', command: null })
     setApplyNote(null)
+    setPatchPlan(null)
   }
 
   function approve() {
     if (!paragraphs || preview.status !== 'valid' || preview.command === null) return
+    const planned = planPatch(readPackage(originalBytes.current), {
+      targetNodeId: preview.command.target_node_id,
+      replacementText: preview.command.replacement_text,
+    })
+    if (!planned.ok) {
+      setPatchPlan(null)
+      setApplyNote(`${planned.code} ${planned.message}`)
+      return
+    }
     const applied = applyParagraphText(paragraphs, preview.command.target_node_id, preview.command.replacement_text)
     if (!applied.ok) {
+      setPatchPlan(null)
       setApplyNote(`${applied.code} ${applied.message}`)
       return
     }
     const approved = previewDecision(preview, { type: 'approve' }, textNodes(paragraphs), originalBytes.current)
     setParagraphs(applied.paragraphs)
     setPreview(approved)
+    setPatchPlan(planned.plan)
     setApplyNote('화면만 바뀌었습니다. 받은 파일은 그대로입니다')
   }
 
@@ -191,6 +205,7 @@ export function App() {
                     setReplacement(value)
                     setCommandDirty(false)
                     setApplyNote(null)
+                    setPatchPlan(null)
                     if (!paragraphs) return
                     if (value === '') {
                       setPreview({ status: 'draft', command: null })
@@ -214,6 +229,7 @@ export function App() {
                   setCommandDirty(true)
                   setCommandText(value)
                   setApplyNote(null)
+                  setPatchPlan(null)
                   if (!paragraphs) return
                   applyEdit(validateShown(value, paragraphs), paragraphs)
                 }}
@@ -243,11 +259,12 @@ export function App() {
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      setPatchPlan(null)
                       setPreview((state) =>
                         previewDecision(state, { type: 'reject' }, textNodes(paragraphs ?? []), originalBytes.current),
                       )
-                    }
+                    }}
                   >
                     거절
                   </button>
@@ -257,6 +274,17 @@ export function App() {
                 <p className="kept" data-apply={preview.status === 'approved' ? 'screen' : 'refused'}>
                   {applyNote}
                 </p>
+              ) : null}
+              {patchPlan ? (
+                <div className="patch-plan">
+                  <p className="kept" data-part="changed">{`바꿀 파트: ${patchPlan.changed.map((entry) => entry.path).join(', ')}`}</p>
+                  <ul>
+                    {patchPlan.kept.map((entry) => (
+                      <li key={entry.path} data-part="kept">{`유지 ${entry.path}`}</li>
+                    ))}
+                  </ul>
+                  <p className="aside-note">저장 파일은 다음 단계</p>
+                </div>
               ) : null}
             </>
           ) : (

@@ -181,6 +181,16 @@ textarea {
   line-height: 1.45;
 }
 
+.patch-plan ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.patch-plan li {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
 .actions {
   display: flex;
   gap: 8px;

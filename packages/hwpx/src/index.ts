@@ -14,6 +14,7 @@ export type Paragraph = {
 }
 
 export { applyParagraphText, type ApplyParagraphResult } from './model/applyParagraphText.ts'
+export { planPatch, readPackage, type HwpxPackage, type PatchPlan, type PlanPatchResult } from './patch/planPatch.ts'
 
 export function readParagraphs(bytes: Uint8Array): Paragraph[] {
   let entries: Record<string, Uint8Array>
