@@ -1,0 +1,15 @@
+{
+  "name": "hwpx-editor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "test": "vitest run",
+    "fixture": "tsx packages/hwpx/src/writeFixtureCli.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

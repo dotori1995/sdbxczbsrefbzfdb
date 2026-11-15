@@ -1,0 +1,177 @@
+:root {
+  color: #1c1917;
+  background: #e7e1d7;
+  font-family: "Malgun Gothic", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  padding: 20px 28px 12px;
+}
+
+.mark {
+  margin: 0;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+}
+
+h1 {
+  margin: 4px 0 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 24px;
+  padding: 8px 28px 32px;
+}
+
+.stage {
+  min-height: 420px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+svg {
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 10px 28px rgba(40, 30, 20, 0.12);
+}
+
+text {
+  font-family: "Malgun Gothic", sans-serif;
+  font-size: 16px;
+  fill: #1c1917;
+  cursor: pointer;
+}
+
+.waiting,
+.error {
+  margin-top: 48px;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.error p {
+  margin: 0 0 8px;
+}
+
+.error p:first-child {
+  font-weight: 700;
+}
+
+aside {
+  background: #f7f4ef;
+  border: 1px solid #ddd6cc;
+  padding: 16px;
+  align-self: start;
+}
+
+aside h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.aside-note {
+  margin: 8px 0 12px;
+  color: #57534e;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.facts {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.facts div {
+  display: grid;
+  gap: 2px;
+}
+
+.facts dt {
+  color: #78716c;
+  font-size: 12px;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0;
+  font-size: 14px;
+}
+
+.field input,
+textarea {
+  width: 100%;
+  font: inherit;
+  padding: 8px;
+  border: 1px solid #d6d3d1;
+  background: #fff;
+}
+
+textarea {
+  min-height: 220px;
+  font-family: Consolas, "Malgun Gothic", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.validation {
+  margin: 12px 0 0;
+  font-weight: 700;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: Consolas, "Malgun Gothic", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 800px) {
+  .top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,2 +1,6 @@
 corpus/hancom/
 notes/**/*.local.md
+node_modules/
+dist/
+tmp/
+.vite/

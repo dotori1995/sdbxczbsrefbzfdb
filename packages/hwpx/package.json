@@ -1,0 +1,12 @@
+{
+  "name": "@hwpx/hwpx",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.8",
+    "fflate": "^0.8.2"
+  }
+}
